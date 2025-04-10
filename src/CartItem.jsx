@@ -31,35 +31,78 @@ const CartItem = ({ onContinueShopping }) => {
   };
   
   const handleIncrement = (item) => {
-    const updatedItem = { ...item };
-    updatedItem.quantity++;
-    dispatch(updateQuantity(updatedItem));
+    const dispatch = useDispatch();
+    dispatch(updateQuantity({ name: item.name, quantity: item.quantity + 1 }));
   };
 
   const handleDecrement = (item) => {
-    const updatedItem = { ...item };
-
-        if (updatedItem.quantity == 1) {
-            // Remove item if number of items gets decremented to 0
-            dispatch(removeItem(updatedItem));
-        } else {
-            updatedItem.quantity--;
-            dispatch(updateQuantity(updatedItem));
-        }
+    const dispatch = useDispatch();
+    if (item.quantity > 1) {
+      dispatch(updateQuantity({ name: item.name, quantity: item.quantity - 1 }));
+    } else {
+      dispatch(removeItem({ name: item.name }));
+    }
   };
 
   const handleRemove = (item) => {
     dispatch(removeItem(item));
   };
 
-  // Calculate total cost based on quantity for an item
-  const calculateTotalCost = (item) => {
-    let totalCost = 0;
-        const itemCost = parseItemCostToInteger(item.cost);
-        totalCost = item.quantity * itemCost;
-
-        return totalCost;
-  };
+  // Example item data (replace with your actual data structure
+  const items = [
+  { id: 1, name: "Snake Plant", quantity: 1, cost: "$12.00" },
+  { id: 2, name: "Peace Lily", quantity: 1, cost: "$18.00" },
+  { id: 3, name: "Snake Plant", quantity: 1, cost: "$15.00" }
+  ];
+  
+  // DOM elements (replace with your actual elements)
+  const quantityInputs = document.querySelectorAll(".quantity-input");
+  const subtotalElements = document.querySelectorAll(".subtotal");
+  const totalCostElement = document.querySelector("#total-cost");
+  const cartIconElement = document.querySelector("#cart-icon");
+  
+  // Event listeners for quantity changes
+  quantityInputs.forEach(input => {
+  input.addEventListener("change", updateItem);
+  });
+  
+  // Calculate subtotal for a single item
+  function calculateSubtotal(item) {
+  const price = parseFloat(item.cost.substring(1));
+  return item.quantity * price;
+  }
+  // Calculate total cost of all items
+  function calculateTotalCost() {
+    let total = 0;
+    items.forEach(item => {
+      total += calculateSubtotal(item);
+    });
+    return total;
+  }
+  
+  // Update the UI after changes
+  function updateItem(event) {
+    const input = event.target;
+    const itemId = parseInt(input.getAttribute("data-item-id"));
+    const item = items.find(i => i.id === itemId);
+    if (item) {
+      item.quantity = parseInt(input.value) || 0;
+      // Update subtotal for this item
+      const subtotal = calculateSubtotal(item);
+      const subtotalElement = document.querySelector(`.subtotal[data-item-id="${itemId}"]`);
+      if (subtotalElement) {
+        subtotalElement.textContent = `$${subtotal.toFixed(2)}`;
+      }
+      
+      // Update overall total cost
+      const totalCost = calculateTotalCost();
+      totalCostElement.textContent = `$${totalCost.toFixed(2)}`;
+      
+      // Update total number of items in the cart
+      const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+      cartIconElement.textContent = `${totalItems}`;
+    }
+  }
 
   return (
     <div className="cart-container">
